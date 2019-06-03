@@ -9,14 +9,14 @@ class MethodWrapper:
 
     Calls with passing `instance` to unwrap method.
     """
-    # What is `types.MethodType` and descripter, access below.
+    # see below to know what is `types.MethodType` and descripter.
     # https://docs.python.org/ja/3/howto/descriptor.html
     # https://docs.python.org/ja/3/library/types.html?highlight=types#types.MethodType
     def __init__(self, method):
         self.__method = method
         params = tuple(signature(method).parameters)
-        self.__is_instmeth = bool(params and params[0] == 'self')
-        self.__is_clsmeth = bool(params and params[0] in ('cls', 'klass'))
+        self.__is_instmeth = bool(params) and params[0] == 'self'
+        self.__is_clsmeth = bool(params) and params[0] == 'cls'
         self.__is_statmeth = not any((self.__is_clsmeth, self.__is_instmeth))
 
     def __call__(self, instance) -> Callable:
@@ -59,7 +59,7 @@ class MethodsMapper(type):
                 return deco
 
         class SampleMethodContainer(metaclass=SubclassedMethodMapper):
-            pass  # methods with decorators.
+            pass  # methods with decorators shall be implemented.
 
         # Below case, `TypeError` raises!
         class AnotherMethodContainer(metaclass=SubclassedMethodMapper):
@@ -87,7 +87,7 @@ class MethodsMapper(type):
     def _create_decorated_func(cls, key, method) -> Callable:
         """
         Internal function.
-        Returns `method` itself after registering the method to
+        Returns `method` itself after registering `key` and `method` to
         inner assosiative array.
 
         Example:
@@ -118,7 +118,6 @@ class MethodsMapper(type):
     @classmethod
     def __get_modified_maps(cls, instance) -> MappingProxyType:
         """
-        Private function.
         Returns accsociative array of keys and methods.
         """
         return MappingProxyType(
