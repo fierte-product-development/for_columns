@@ -115,7 +115,7 @@ class AnotherContainer(metaclass=MethodsMapper):
     @staticmethod
     @MethodsMapper.register('a')
     def baz(additional) -> str:
-        return f'{additional}_bar'
+        return f'{additional}_baz'
 
 # ERROR!
 another = AnotherContainer()
