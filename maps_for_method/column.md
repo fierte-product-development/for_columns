@@ -1,8 +1,8 @@
 Pythonで辞書の様にクラスのメソッドを呼び出す
 
 # きっかけ
-時折、依存性の注入をして、外部の設定ファイルからクラスのメソッドを呼び出したい時がある。
-その際、真っ先に思いつくのは下記のような実装である。
+時折、依存性の注入をして、外部の設定ファイルからクラスのメソッドを呼び出したい時がありました。
+その際、真っ先に思いついたのは下記のような実装でした。
 
 ```python
 class Parrot:
@@ -32,16 +32,16 @@ ex_parrot = Parrot()
 ex_parrot.does['sleep']()
 ```
 
-だが、これだと多少の問題がある。
+だが、これだと多少の問題があります。
 - どのメソッドを何の単語で登録したか`__init__`を見ないとわからなくなる
 - メソッド名を変更するとき、辞書も変更しなければならない
 - キーを変更するとき、当然辞書も変更しなければならない
 
-これでは不便なため、一つのメソッドがどのキーに結びついているかが一見して理解でき、変更にも容易にしたい。
+これでは不便なため、一つのメソッドがどのキーに結びついているかが一見して理解でき、変更にも容易にしたいところです。
 
 # 単純な実装
 ## クラス定義
-メタクラスで単純な引数付きデコレータ関数を定義する。「ダブり」で登録しないために、例外も実装する。
+メタクラスで単純な引数付きデコレータ関数を定義します。「ダブり」で登録しないために、例外も実装します。
 
 ```python
 from types import MappingProxyType
@@ -81,7 +81,7 @@ class MethodsMapper(type):
         return deco
 ```
 
-「コンテナ」となるクラスの`staticmethod`にデコレータをつける。
+「コンテナ」となるクラスの`staticmethod`にデコレータをつけます。
 
 ```python
 class SampleMethodsContainer(metaclass=MethodsMapper):
@@ -114,7 +114,7 @@ print(container.maps['b']('ham'))  # >>> 'ham_bar'
 ```
 
 ## 問題点
-だが、`metaclass=MethodsMapper`を再利用すると問題が発生する。
+ですが、`metaclass=MethodsMapper`を再利用すると問題が発生します。
 
 ```python
 class AnotherContainer(metaclass=MethodsMapper):
@@ -129,11 +129,11 @@ another = AnotherContainer()
 print(another.maps['a']('spam'))  # >>> 'spam_baz'
 ```
 
-これを実行すると`AlreadyExistsKeyInMethodsMapper: 'a' is an already-existed key.`と例外が返されて止まってしまう。
+これを実行すると`AlreadyExistsKeyInMethodsMapper: 'a' is an already-existed key.`と例外が返されて止まってしまいます。
 
-これは違うクラスでも、同じメタクラス`MethodsMapper`のプライベートな内部変数の辞書`__keys_meths`に同じキーでメソッドを登録しようとしたために発生している。
+これは違うクラスでも、同じメタクラス`MethodsMapper`のプライベートな内部変数の辞書`__keys_meths`に同じキーでメソッドを登録しようとしたため発生しています。
 
-また、`staticmethod`しか登録できないのは、クラスやインスタンスの他の属性を参照できなくて不便である。
+また、`staticmethod`しか登録できないのは、クラスやインスタンスの他の属性を参照できなくて不便です。
 
 # メタクラスの単純な再利用の禁止と、`staticmethod`以外も登録可能にする
 
@@ -266,16 +266,188 @@ class MethodsMapper(type):
         )
 ```
 ## 各クラスの解説
+用例はdocstringを参照のこと。
+
 ### `MethodWrapper`
 デコレートされたメソッドをラップするためのクラス。
 
-`__init__`の引数に`method`を受け取って、`inspect.signature`で`inspect.Signature.parameters`を見て
+`__init__`の引数に`method`を受け取って、`inspect.signature(method).parameters`を見て
 - 第一引数が`self`ならインスタンスメソッド
 - 第一引数が`cls`または`klass`ならクラスメソッド
-- 第一引数が上記以外か引数がないならスタティックメソッド
+- 第一引数が上記以外か、引数がないならスタティックメソッド
 
 として、
 
-`__call__`の引数にインスタンスを渡すことでアンラップして、外部から呼び出し可能な関数を返す。
+`__call__`の引数にインスタンスを渡すことでアンラップして、外部から呼び出し可能な関数を返します。
 
 ### `AlreadyExistsKeyInMethodsMapper`
+「ダブり」で登録しようとした際の例外。
+
+### `MethodsMapper`
+プライベートな抽象属性`__usage`と`__maps`の定義が必要な抽象クラス。
+
+サブクラスが`MethodsMapper`を継承すれば`__init_subclass__`が発火して、`__usage`と`__maps`を定義するため、サブクラス上でこれらの変数を定義する必要はありません。
+
+サブクラス化しないと、`__maps`を定義していないことで`AttributeError`が発生して、それをキャッチしてインスタンス化できない旨の`TypeError`を発生させます。
+
+このクラスのサブクラスをメタクラスとして使うと、`__new__`の発火時に`__usage`にクラスの型が登録されます。
+
+違うクラスで同じメタクラスを使おうとすると、`__usage`に2つ以上のクラスが登録されることになり、`TypeError`を返します。
+
+# 用例とテスト
+下記をインポートした上で、
+```python
+from main import MethodsMapper
+from types import MappingProxyType
+from typing import Callable
+```
+
+下記のサンプル用のクラスを作って`assert`で検証します。
+
+```python
+class SampleMapper(MethodsMapper):
+    @classmethod
+    def register(cls, key) -> Callable:
+        """
+        Decorator for registering a key and a method.
+        """
+        def deco(method):
+            return cls._create_decorated_func(key, method)
+        return deco
+
+
+class SampleMethodsContainer(metaclass=SampleMapper):
+    """
+    sample concrete class.
+    """
+    sample_cls_attr = 'cls sample'
+
+    def __init__(self):
+        self.__frozen_maps = MappingProxyType(self._get_metamaps(self))
+        self.sample_inst_attrs = 'inst sample'
+
+    @property
+    def maps(self) -> MappingProxyType:
+        """
+        Returns assosiative array of keys and methods.
+        """
+        return self.__frozen_maps
+
+    @staticmethod
+    @SampleMapper.register('a')
+    def foo(additional) -> str:
+        return f'{additional}_foo'
+
+    @staticmethod
+    @SampleMapper.register('b')
+    def bar(additional) -> str:
+        return f'{additional}_bar'
+
+    @SampleMapper.register('c')
+    def jugem(self) -> str:
+        return f'{self.sample_inst_attrs}, {self.sample_cls_attr}'
+
+    @SampleMapper.register('d')
+    def gokoo(self) -> str:
+        return 'gokoo'
+
+    @classmethod
+    @SampleMapper.register('e')
+    def suri(cls) -> str:
+        return cls.sample_cls_attr
+
+
+# tests
+container = SampleMethodsContainer()
+assert container.maps['a'] == container.foo
+assert container.maps['a']('spam') \
+    == container.foo('spam') \
+    == 'spam_foo'  # noqa
+assert container.maps['b'] == container.bar
+assert container.maps['b']('ham') \
+    == container.bar('ham') \
+    == 'ham_bar'  # noqa
+assert container.maps['c'] == container.jugem
+assert container.maps['c']() \
+    == container.jugem() \
+    == 'inst sample, cls sample'  # noqa
+assert container.maps['d'] == container.gokoo
+assert container.maps['d']() \
+    == container.gokoo() \
+    == 'gokoo'  # noqa
+assert container.maps['e'] == container.suri
+assert container.maps['e']() \
+    == container.suri() \
+    == 'cls sample'  # noqa
+```
+
+また、この様なデコレータも作ることができます。
+
+```python
+class AnotherMapper(MethodsMapper):
+    __case_a = []
+    __case_b = []
+
+    def __init__(self, *args):
+        self._case_a = tuple(self.__case_a)
+        self._case_b = tuple(self.__case_b)
+
+    @classmethod
+    def register_a(cls, key) -> Callable:
+        def deco(method):
+            cls.__case_a.append(key)
+            return cls._create_decorated_func(key, method)
+        return deco
+
+    @classmethod
+    def register_b(cls, key) -> Callable:
+        def deco(method):
+            cls.__case_b.append(key)
+            return cls._create_decorated_func(key, method)
+        return deco
+
+
+class AnotherSample(metaclass=AnotherMapper):
+    def __init__(self):
+        metamap = self._get_metamaps(self)
+        self.__a_maps = MappingProxyType(
+            {k: v for k, v in metamap.items() if k in self._case_a}
+        )
+        self.__b_maps = MappingProxyType(
+            {k: v for k, v in metamap.items() if k in self._case_b}
+        )
+
+    @AnotherMapper.register_a('x')
+    def hoge(self):
+        return 'hoge'
+
+    @AnotherMapper.register_b('y')
+    def fuga(self):
+        return 'fuga'
+
+    @property
+    def a_maps(self):
+        return self.__a_maps
+
+    @property
+    def b_maps(self):
+        return self.__b_maps
+
+
+another = AnotherSample()
+assert another.a_maps['x'] == another.hoge
+assert another.a_maps['x']() \
+    == another.hoge() \
+    == 'hoge'  # noqa
+assert another.b_maps['y'] == another.fuga
+assert another.b_maps['y']() \
+    == another.fuga() \
+    == 'fuga'  # noqa
+```
+
+`AnotherMapper`の`__init__`が発火した際に、クラスの属性にメタクラスの属性を引き渡して、インスタンス側で使えるようにしてあります。
+
+# 終わりに
+プロダクト開発では、外部から様々な経理上のドキュメントをパースするようなプログラムを実装する必要があり、その条件分岐を外部の設定ファイルに委ねているため、依存性の注入をした際に分かりやすい書き方が必要で、このコラムのもとになるプログラムを書きました。
+
+このコラムが、同じようなお悩みを抱えていた方の一助となれば幸いです。
