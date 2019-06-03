@@ -266,7 +266,7 @@ class MethodsMapper(type):
 
 `__init__`の引数に`method`を受け取り、`inspect.signature(method).parameters`を見て
 - 第一引数が`self`ならインスタンスメソッド
-- 第一引数が`cls`または`klass`ならクラスメソッド
+- 第一引数が`cls`ならクラスメソッド
 - 第一引数が上記以外か、引数がないならスタティックメソッド
 
 として、
