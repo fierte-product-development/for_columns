@@ -133,8 +133,8 @@ another = AnotherSample()
 assert another.a_maps['x'] == another.hoge
 assert another.a_maps['x']() \
     == another.hoge() \
-    == 'hoge'
+    == 'hoge'  # noqa
 assert another.b_maps['y'] == another.fuga
 assert another.b_maps['y']() \
     == another.fuga() \
-    == 'fuga'
+    == 'fuga'  # noqa
