@@ -1,4 +1,5 @@
-Pythonで辞書の様にクラスのメソッドを呼び出す
+Pythonのメソッドにエイリアスを設定する
+===
 
 # きっかけ
 時折、依存性の注入をして、外部の設定ファイルからクラスのメソッドを呼び出したい時がありました。
@@ -11,33 +12,25 @@ class Parrot:
         self.does = {
             'pine': self.decease,
             'sleep': self.expire,
-            'shag_out': self.go_to_meet_its_maker,
-            'rest': self.rest_in_peace,
         }
 
     def decease(self):
-        pass
+        return 'go_to_meet_its_maker'
     
     def expire(self):
-        pass
-
-    def go_to_meet_its_maker(self):
-        pass
-
-    def rest_in_peace(self):
-        pass
+        return 'rest_in_peace'
 
 
 ex_parrot = Parrot()
-ex_parrot.does['sleep']()
+print(ex_parrot.does['sleep']())  # >>> 'rest_in_peace'
 ```
 
-だが、これだと多少の問題があります。
+ですが、これだと多少の問題があります。
 - どのメソッドを何の単語で登録したか`__init__`を見ないとわからなくなる
 - メソッド名を変更するとき、辞書も変更しなければならない
 - キーを変更するとき、当然辞書も変更しなければならない
 
-これでは不便なため、一つのメソッドがどのキーに結びついているかが一見して理解でき、変更にも容易にしたいところです。
+これでは不便なため、一つのメソッドがどのキーに結びついているかが一見して理解できて、また変更も容易にしたいところです。
 
 # 単純な実装
 ## クラス定義
@@ -114,7 +107,7 @@ print(container.maps['b']('ham'))  # >>> 'ham_bar'
 ```
 
 ## 問題点
-ですが、`metaclass=MethodsMapper`を再利用すると問題が発生します。
+これでエイリアスの登録はできましたが、この実装は`metaclass=MethodsMapper`を再利用した際に問題が生じます。
 
 ```python
 class AnotherContainer(metaclass=MethodsMapper):
@@ -129,13 +122,13 @@ another = AnotherContainer()
 print(another.maps['a']('spam'))  # >>> 'spam_baz'
 ```
 
-これを実行すると`AlreadyExistsKeyInMethodsMapper: 'a' is an already-existed key.`と例外が返されて止まってしまいます。
+上記コードを実行すると、`AlreadyExistsKeyInMethodsMapper: 'a' is an already-existed key.`と例外が返されてしまいます。
 
-これは違うクラスでも、同じメタクラス`MethodsMapper`のプライベートな内部変数の辞書`__keys_meths`に同じキーでメソッドを登録しようとしたため発生しています。
+これは違うクラスでも、同じメタクラス`MethodsMapper`のプライベート変数である辞書`__keys_meths`に同じキーでメソッドを登録しようとしたためです。
 
-また、`staticmethod`しか登録できないのは、クラスやインスタンスの他の属性を参照できなくて不便です。
+また、`staticmethod`しか登録できないのは、クラスやインスタンスの他の属性を参照できず不便です。
 
-# メタクラスの単純な再利用の禁止と、`staticmethod`以外も登録可能にする
+# メタクラスの単純な再利用を禁止し、`staticmethod`以外も登録可能にする
 
 ```python
 from types import MappingProxyType, MethodType
@@ -149,14 +142,14 @@ class MethodWrapper:
 
     Calls with passing `instance` to unwrap method.
     """
-    # What is `types.MethodType` and descripter, access below.
+    # see below to know what is `types.MethodType` and descripter.
     # https://docs.python.org/ja/3/howto/descriptor.html
     # https://docs.python.org/ja/3/library/types.html?highlight=types#types.MethodType
     def __init__(self, method):
         self.__method = method
         params = tuple(signature(method).parameters)
-        self.__is_instmeth = bool(params and params[0] == 'self')
-        self.__is_clsmeth = bool(params and params[0] in ('cls', 'klass'))
+        self.__is_instmeth = bool(params) and params[0] == 'self'
+        self.__is_clsmeth = bool(params) and params[0] == 'cls'
         self.__is_statmeth = not any((self.__is_clsmeth, self.__is_instmeth))
 
     def __call__(self, instance) -> Callable:
@@ -199,7 +192,7 @@ class MethodsMapper(type):
                 return deco
 
         class SampleMethodContainer(metaclass=SubclassedMethodMapper):
-            pass  # methods with decorators.
+            pass  # methods with decorators shall be implemented.
 
         # Below case, `TypeError` raises!
         class AnotherMethodContainer(metaclass=SubclassedMethodMapper):
@@ -227,7 +220,7 @@ class MethodsMapper(type):
     def _create_decorated_func(cls, key, method) -> Callable:
         """
         Internal function.
-        Returns `method` itself after registering the method to
+        Returns `method` itself after registering `key` and `method` to
         inner assosiative array.
 
         Example:
@@ -258,12 +251,12 @@ class MethodsMapper(type):
     @classmethod
     def __get_modified_maps(cls, instance) -> MappingProxyType:
         """
-        Private function.
         Returns accsociative array of keys and methods.
         """
         return MappingProxyType(
             {key: meth_wrap(instance) for key, meth_wrap in cls.__maps.items()}
         )
+
 ```
 ## 各クラスの解説
 用例はdocstringを参照のこと。
@@ -271,7 +264,7 @@ class MethodsMapper(type):
 ### `MethodWrapper`
 デコレートされたメソッドをラップするためのクラス。
 
-`__init__`の引数に`method`を受け取って、`inspect.signature(method).parameters`を見て
+`__init__`の引数に`method`を受け取り、`inspect.signature(method).parameters`を見て
 - 第一引数が`self`ならインスタンスメソッド
 - 第一引数が`cls`または`klass`ならクラスメソッド
 - 第一引数が上記以外か、引数がないならスタティックメソッド
@@ -450,4 +443,4 @@ assert another.b_maps['y']() \
 # 終わりに
 プロダクト開発では、外部から様々な経理上のドキュメントをパースするようなプログラムを実装する必要があり、その条件分岐を外部の設定ファイルに委ねているため、依存性の注入をした際に分かりやすい書き方が必要で、このコラムのもとになるプログラムを書きました。
 
-このコラムが、同じようなお悩みを抱えていた方の一助となれば幸いです。
+このライブラリが、同じようなお悩みを抱えていた方の一助となれば幸いです。
