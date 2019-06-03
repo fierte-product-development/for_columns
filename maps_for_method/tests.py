@@ -76,7 +76,7 @@ assert container.maps['d']() \
 assert container.maps['e'] == container.suri
 assert container.maps['e']() \
     == container.suri() \
-    == 'cls sample'
+    == 'cls sample'  # noqa
 
 
 class AnotherMapper(MethodsMapper):
