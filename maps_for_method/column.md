@@ -52,7 +52,7 @@ class AlreadyExistsKeyInMethodsMapper(RuntimeError):
 
 class MethodsMapper(type):
     """
-    Metaclass for registering keys and staticmethod.
+    Metaclass for registering keys and staticmethods.
     """
     __keys_meths = {}
 
