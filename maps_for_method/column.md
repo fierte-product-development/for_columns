@@ -288,16 +288,14 @@ class MethodsMapper(type):
 違うクラスで同じメタクラスを使おうとすると、`__usage`に2つ以上のクラスが登録されることになり、`TypeError`を返します。
 
 # 用例とテスト
-下記をインポートした上で、
+下記のサンプル用のクラスを作って`assert`で検証します。
+
 ```python
 from main import MethodsMapper
 from types import MappingProxyType
 from typing import Callable
-```
 
-下記のサンプル用のクラスを作って`assert`で検証します。
 
-```python
 class SampleMapper(MethodsMapper):
     @classmethod
     def register(cls, key) -> Callable:
