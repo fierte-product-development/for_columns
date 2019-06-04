@@ -261,7 +261,7 @@ class MethodsMapper(type):
 ## 各クラスの解説
 [コード(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/maps_for_methods/maps_for_method/main.py)の用例はdocstringを参照のこと。
 
-### [`MethodWrapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L6)
+### `MethodWrapper`
 デコレートされたメソッドをラップするためのクラス。
 
 `__init__`の引数に`method`を受け取り、`inspect.signature(method).parameters`を見て
@@ -273,10 +273,10 @@ class MethodsMapper(type):
 
 `__call__`の引数にインスタンスを渡すことでアンラップして、外部から呼び出し可能な関数を返します。
 
-### [`AlreadyExistsKeyInMethodsMapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L35)
+### `AlreadyExistsKeyInMethodsMapper`
 「ダブり」で登録しようとした際の例外。
 
-### [`MethodsMapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L44)
+### `MethodsMapper`
 プライベートな抽象属性`__usage`と`__maps`の定義が必要な抽象クラス。
 
 サブクラスが`MethodsMapper`を継承すれば`__init_subclass__`が発火して、`__usage`と`__maps`を定義するため、サブクラス上でこれらの変数を定義する必要はありません。
