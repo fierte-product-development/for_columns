@@ -88,7 +88,7 @@ class MethodsMapper(type):
         """
         Internal function.
         Returns `method` itself after registering `key` and `method` to
-        inner assosiative array.
+        private assosiative array.
 
         Example:
         ---
