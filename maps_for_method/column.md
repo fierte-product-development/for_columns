@@ -3,7 +3,7 @@ Pythonのメソッドにエイリアスを設定する
 
 # きっかけ
 時折、依存性の注入をして、外部の設定ファイルからクラスのメソッドをエイリアスで呼び出したい時がありました。
-その際、真っ先に思いついたのは下記のような実装でした。
+その際、真っ先に思いついたのは[下記のような実装(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/maps_for_methods/maps_for_method/uncompleted/sample_parrot.py)でした。
 
 ```python
 class Parrot:
@@ -34,7 +34,7 @@ print(ex_parrot.does['sleep']())  # >>> 'rest_in_peace'
 
 # 単純な実装
 ## クラス定義
-メタクラスで単純な引数付きデコレータ関数を定義します。「ダブり」で登録しないために、例外も実装します。
+[メタクラスで単純な引数付きデコレータ関数を定義(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/uncompleted/sample_static_only.py#L14)します。「ダブり」で登録しないために、[例外も実装(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/uncompleted/sample_static_only.py#L5)します。
 
 ```python
 from types import MappingProxyType
@@ -74,7 +74,7 @@ class MethodsMapper(type):
         return deco
 ```
 
-「コンテナ」となるクラスの`staticmethod`にデコレータをつけます。
+[「コンテナ」となるクラス(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/uncompleted/sample_static_only.py#L38)の`staticmethod`にデコレータをつけます。
 
 ```python
 class SampleMethodsContainer(metaclass=MethodsMapper):
@@ -107,7 +107,7 @@ print(container.maps['b']('ham'))  # >>> 'ham_bar'
 ```
 
 ## 問題点
-これでエイリアスの登録はできましたが、この実装は`metaclass=MethodsMapper`を再利用した際に問題が生じます。
+これでエイリアスの登録はできましたが、この実装は`metaclass=MethodsMapper`を[再利用した際に問題(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/uncompleted/sample_static_only.py#L68)が生じます。
 
 ```python
 class AnotherContainer(metaclass=MethodsMapper):
@@ -259,9 +259,9 @@ class MethodsMapper(type):
 
 ```
 ## 各クラスの解説
-用例はdocstringを参照のこと。
+[コード(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/maps_for_methods/maps_for_method/main.py)の用例はdocstringを参照のこと。
 
-### `MethodWrapper`
+### [`MethodWrapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L6)
 デコレートされたメソッドをラップするためのクラス。
 
 `__init__`の引数に`method`を受け取り、`inspect.signature(method).parameters`を見て
@@ -273,10 +273,10 @@ class MethodsMapper(type):
 
 `__call__`の引数にインスタンスを渡すことでアンラップして、外部から呼び出し可能な関数を返します。
 
-### `AlreadyExistsKeyInMethodsMapper`
+### [`AlreadyExistsKeyInMethodsMapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L35)
 「ダブり」で登録しようとした際の例外。
 
-### `MethodsMapper`
+### [`MethodsMapper`(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/main.py#L44)
 プライベートな抽象属性`__usage`と`__maps`の定義が必要な抽象クラス。
 
 サブクラスが`MethodsMapper`を継承すれば`__init_subclass__`が発火して、`__usage`と`__maps`を定義するため、サブクラス上でこれらの変数を定義する必要はありません。
@@ -288,7 +288,7 @@ class MethodsMapper(type):
 違うクラスで同じメタクラスを使おうとすると、`__usage`に2つ以上のクラスが登録されることになり、`TypeError`を返します。
 
 # 用例とテスト
-下記のサンプル用のクラスを作って`assert`で検証します。
+[下記のサンプル用のクラス(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/maps_for_methods/maps_for_method/tests.py)を作って`assert`で検証します。
 
 ```python
 from main import MethodsMapper
@@ -372,7 +372,7 @@ assert container.maps['e']() \
     == 'cls sample'  # noqa
 ```
 
-また、この様なデコレータも作ることができます。
+また、[この様なデコレータ(外部リンク: GitHub)](https://github.com/fierte-product-development/for_columns/blob/520bf4b890c95f3f249f4641cf3b0fe8fed68a45/maps_for_method/tests.py#L82)も作ることができます。
 
 ```python
 class AnotherMapper(MethodsMapper):
@@ -441,4 +441,4 @@ assert another.b_maps['y']() \
 # 終わりに
 プロダクト開発では、外部から様々な経理上のドキュメントをパースするようなプログラムを実装する必要があり、その条件分岐を外部の設定ファイルに委ねているため、依存性の注入をした際に分かりやすい書き方が必要で、このコラムのもとになるプログラムを書きました。
 
-このライブラリが、同じようなお悩みを抱えていた方の一助となれば幸いです。
+[このライブラリ](https://github.com/fierte-product-development/for_columns/tree/maps_for_methods/maps_for_method)が、同じようなお悩みを抱えていた方の一助となれば幸いです。
